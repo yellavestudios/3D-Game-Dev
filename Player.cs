@@ -23,6 +23,8 @@ public class Player : MonoBehaviour
     private Vector3 direction;
     private Vector3 playerVelocity; //velocity = direction * speed
 
+    private Camera _mainCamera;
+
     private void Start()
     {
         _charactercontroller = gameObject.GetComponent<CharacterController>();
@@ -31,14 +33,43 @@ public class Player : MonoBehaviour
         {
             Debug.LogError("Character Controller is NULL!");
         }
+
+        _mainCamera = Camera.main;
+
+        if (_mainCamera == null)
+        {
+            Debug.LogError("Main Camera is NULL!");
+        }
     }
 
     void Update()
     {
+        //y mouse, get component of camera, apply rotation of x from the camera
+        float mouseX = Input.GetAxis("Mouse X");
+        float mouseY = Input.GetAxis("Mouse Y");
+
+
+        //x mouse, apply player rot y == look left and right
+        Vector3 currentRotation = transform.localEulerAngles; //current rotation
+        currentRotation.y += mouseX;
+        transform.localRotation = Quaternion.AngleAxis(currentRotation.y, Vector3.up);  //new rotation 
+
+        //look up and down
+        Vector3 currentCameraRotation = _mainCamera.gameObject.transform.localEulerAngles;
+        currentCameraRotation.x -= mouseY;
+        //_mainCamera.gameObject.transform.localEulerAngles = currentCameraRotation;
+        _mainCamera.gameObject.transform.localRotation = Quaternion.AngleAxis(currentCameraRotation.x, Vector3.right);
+
         
+
+        CalculateMovement();
+    }
+
+    private void CalculateMovement()
+    {
         if (_charactercontroller.isGrounded == true)
         {
-            
+
             float horizontal = Input.GetAxis("Horizontal");
             float vertical = Input.GetAxis("Vertical");
             direction = new Vector3(horizontal, 0, vertical);
@@ -52,6 +83,8 @@ public class Player : MonoBehaviour
 
         //brings the player back down after jumping, applies gravity
         playerVelocity.y -= gravity * Time.deltaTime;
+
+        playerVelocity = transform.TransformDirection(playerVelocity); //moves player in direction that camera is facing
 
         _charactercontroller.Move(playerVelocity * Time.deltaTime);
     }
